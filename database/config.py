@@ -13,4 +13,6 @@ except Exception as e:
     print(e)
 
 database = client.mini_perplexity
-collection = database.chat_history   # The name collection can be rename as according to the work of the collection.
+
+# All collections for the database
+queries_collection = database.queries_history   
