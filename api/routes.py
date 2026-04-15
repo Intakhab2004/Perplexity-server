@@ -4,6 +4,7 @@ from database.config import queries_collection
 from database.models.user_query import Queries
 from database.schemas.query_schema import query_history
 from database.models.user_query import Query
+from services.llm_service import llm_service
 
 router = APIRouter()
 
@@ -23,12 +24,19 @@ class QueryRequest(BaseModel):
 def post_query(req: QueryRequest):
     try:
         user = queries_collection.find_one({"userId": req.userId})
+        ai_reply = llm_service.ai_response(req.query)
+        
         if user:
             queries_collection.update_one(
                 {"userId": req.userId},
                 {
                     "$push": {
-                        "history": Query(content=req.query).model_dump()
+                        "history": {
+                            "$each": [
+                                Query(content=req.query).model_dump(),
+                                Query(content=ai_reply).model_dump()
+                            ]
+                        }
                     }
                 }
             )
@@ -37,7 +45,8 @@ def post_query(req: QueryRequest):
             new_user = Queries(
                 userId=req.userId,
                 history=[
-                    Query(content=req.query)
+                    Query(content=req.query),
+                    Query(content=ai_reply)
                 ]
             )
 
@@ -45,7 +54,8 @@ def post_query(req: QueryRequest):
 
         return {
             "success": True,
-            "message": "User query saved"
+            "message": "User query saved",
+            "reply": ai_reply
         }
     except Exception as e:
         return {
