@@ -25,7 +25,7 @@ class LLMService:
             return res.choices[0].message.content
         
         except Exception as e:
-            return f"Something went wrong while generating ai response {str(e)}"
+            raise Exception(f"LLM error: { str(e)}")
 
     
 llm_service = LLMService()
