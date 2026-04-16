@@ -16,3 +16,4 @@ database = client.mini_perplexity
 
 # All collections for the database
 queries_collection = database.queries_history   
+plan_collection = database.query_plan

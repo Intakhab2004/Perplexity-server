@@ -5,6 +5,7 @@ from database.models.user_query import Queries
 from database.schemas.query_schema import query_history
 from database.models.user_query import Query
 from services.llm_service import llm_service
+from agents.planner_agent import generate_plan
 
 router = APIRouter()
 
@@ -25,6 +26,7 @@ def post_query(req: QueryRequest):
     try:
         user = queries_collection.find_one({"userId": req.userId})
         ai_reply = llm_service.ai_response(req.query)
+        generate_plan(query=req.query, user_id=req.userId)
         
         if user:
             queries_collection.update_one(
