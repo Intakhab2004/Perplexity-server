@@ -6,6 +6,8 @@ from database.schemas.query_schema import query_history
 from database.models.user_query import Query
 from services.llm_service import llm_service
 from agents.planner_agent import generate_plan
+from typing import List
+from agents.search_agent import search
 
 router = APIRouter()
 
@@ -82,6 +84,26 @@ def get_chat_history(userId: str):
             }
 
     except Exception as e:
+        return {
+            "success": False,
+            "message": f"Internal server error: {str(e)}"
+        }
+
+
+# Test Route
+class SearchRequest(BaseModel):
+    question: List[str]
+
+@router.post("/search-query")
+def search_query(req: SearchRequest):
+    try:
+        res = search(req.question)
+        return {
+            "success": True,
+            "data": res
+        }
+    except Exception as e:
+        print(f"Something went wrong while searching")
         return {
             "success": False,
             "message": f"Internal server error: {str(e)}"
