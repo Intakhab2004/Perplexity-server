@@ -3,8 +3,9 @@
 
 
 
-def generate_chunks(text: str, chunk_size: int = 40, overlap: int = 10):
+def split_text(text: str, chunk_size: int = 100, overlap: int = 25):
     words = text.split()   # Word-based chunking
+    max_chunks = 12
 
     chunks = []
     step = chunk_size - overlap
@@ -16,4 +17,4 @@ def generate_chunks(text: str, chunk_size: int = 40, overlap: int = 10):
         chunk = " ".join(words[i:i+chunk_size])
         chunks.append(chunk)
     
-    return chunks
+    chunks = chunks[:max_chunks]
