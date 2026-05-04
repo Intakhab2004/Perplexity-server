@@ -18,3 +18,4 @@ def split_text(text: str, chunk_size: int = 100, overlap: int = 25):
         chunks.append(chunk)
     
     chunks = chunks[:max_chunks]
+    return chunks

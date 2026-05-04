@@ -8,6 +8,9 @@ from services.llm_service import llm_service
 from agents.planner_agent import generate_plan
 from typing import List
 from agents.search_agent import search
+from services.chunking_service import generate_chunks
+from services.vector_store import store_embeddings
+from services.vector_store import search_similar
 
 router = APIRouter()
 
@@ -98,9 +101,20 @@ class SearchRequest(BaseModel):
 def search_query(req: SearchRequest):
     try:
         res = search(req.question)
+
+        chunks = generate_chunks(res)
+        if not chunks:
+            raise ValueError("Something went wrong while generating the chunks")
+        
+        info = store_embeddings(chunks)
+        if not info == "completed":
+            raise ValueError("Something went wrong while storing embeddings")
+
+        top_results = search_similar("what is the reason of war", 5)
+
         return {
             "success": True,
-            "data": res
+            "data": top_results
         }
     except Exception as e:
         print(f"Something went wrong while searching")

@@ -1,31 +1,36 @@
 from typing import List, Dict
 from helpers.config import settings
+import uuid
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
-from qdrant_client.models import PointStruct
 from services.embedding_service import generate_embedding
+
 
 client = QdrantClient(url=settings.QDRANT_URL)
 
 
 def store_embeddings(chunks: List[Dict]):
-    # Creating collection for vector_db
-    client.create_collection(
-        collection_name="content_collection",
-        vectors_config=VectorParams(
-            size=768,
-            distance=Distance.COSINE
-        )
-    )
-
-    texts = [chunk.get("text", "") for chunk in chunks]
+    # Generating embeddings
+    texts = [chunk.get("text", "") for chunk in chunks if chunk.get("text")]
     embeddings = generate_embedding(texts)
+
+    # Creating collection for vector_db if not exists
+    embedding_dimension = len(embeddings[0])
+    if not client.collection_exists("content_collection"):
+        client.create_collection(
+            collection_name="content_collection",
+            vectors_config=VectorParams(
+                size=embedding_dimension,
+                distance=Distance.COSINE
+            )
+        )
+
 
     points = []
     for i, chunk in enumerate(chunks):
         points.append({
-            "id": i,
-            "embedding": embeddings[i].values,
+            "id": str(uuid.uuid4()),
+            "vector": embeddings[i],
             "payload": {
                 "text": chunk["text"],
                 "source": chunk["source"],
@@ -38,8 +43,31 @@ def store_embeddings(chunks: List[Dict]):
         collection_name="content_collection",
         points=points
     )
-    print("Vector store info: ", info)
+    return info.status
 
 
-# TODO: Check this pipeline and create a function for similarity search
+def search_similar(query: str, top_k: int = 5):
+    query_embedding = generate_embedding([query])[0]
+
+    top_k = min(top_k, 8)
+    results = client.query_points(
+        collection_name="content_collection",
+        query=query_embedding,
+        limit=top_k
+    ).points
+
+    formatted_result = [
+        {
+            "text": res.payload.get("text") if res.payload else None,
+            "source": res.payload.get("source") if res.payload else None,
+            "title": res.payload.get("title") if res.payload else None,
+            "score": res.score
+        }
+        for res in results
+    ]
+
+    return formatted_result
+
+
+
 
