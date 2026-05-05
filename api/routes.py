@@ -11,6 +11,7 @@ from agents.search_agent import search
 from services.chunking_service import generate_chunks
 from services.vector_store import store_embeddings
 from services.vector_store import search_similar
+from services.vector_store import generate_answer
 
 router = APIRouter()
 
@@ -93,6 +94,9 @@ def get_chat_history(userId: str):
         }
 
 
+
+
+
 # Test Route
 class SearchRequest(BaseModel):
     question: List[str]
@@ -110,11 +114,11 @@ def search_query(req: SearchRequest):
         if not info == "completed":
             raise ValueError("Something went wrong while storing embeddings")
 
-        top_results = search_similar("what is the reason of war", 5)
+        result = generate_answer(req.question[0])
 
         return {
             "success": True,
-            "data": top_results
+            "data": result
         }
     except Exception as e:
         print(f"Something went wrong while searching")

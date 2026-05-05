@@ -49,7 +49,7 @@ def store_embeddings(chunks: List[Dict]):
 def search_similar(query: str, top_k: int = 5):
     query_embedding = generate_embedding([query])[0]
 
-    top_k = min(top_k, 8)
+    top_k = min(top_k, 5)
     results = client.query_points(
         collection_name="content_collection",
         query=query_embedding,
@@ -67,7 +67,3 @@ def search_similar(query: str, top_k: int = 5):
     ]
 
     return formatted_result
-
-
-
-
