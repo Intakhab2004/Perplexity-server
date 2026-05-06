@@ -42,15 +42,18 @@ def generate_answer(query: str):
     """
     
     answer = llm_service.ai_response(prompt=USER_PROMPT, system_prompt=SYSTEM_PROMPT)
-    title_list = [data["title"] for data in retrieved_data]
-    url_list = [data["url"] for data in retrieved_data]
+    sources = [
+        {
+            "id": i,
+            "title": data["title"],
+            "url": data["source"]
+        }
+        for i, data in enumerate(retrieved_data, 1)
+    ]
 
     structured_answer = {
         "answer": answer,
-        "sources": {
-            "title": title_list,
-            "url": url_list
-        }
+        "sources": sources
     }
 
     return structured_answer
