@@ -3,9 +3,9 @@
 
 
 
-def split_text(text: str, chunk_size: int = 100, overlap: int = 25):
+def split_text(text: str, chunk_size: int = 250, overlap: int = 50):
     words = text.split()   # Word-based chunking
-    max_chunks = 12
+    max_chunks = 7
 
     chunks = []
     step = chunk_size - overlap

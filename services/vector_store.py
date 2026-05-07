@@ -12,6 +12,7 @@ client = QdrantClient(url=settings.QDRANT_URL)
 def store_embeddings(chunks: List[Dict]):
     # Generating embeddings
     texts = [chunk.get("text", "") for chunk in chunks if chunk.get("text")]
+    texts = list(set(texts))
     embeddings = generate_embedding(texts)
 
     # Creating collection for vector_db if not exists
