@@ -1,13 +1,13 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from database.config import queries_collection
-from database.models.user_query import Queries
 from database.schemas.query_schema import query_history
-from database.models.user_query import Query
-from services.llm_service import llm_service
 from agents.planner_agent import generate_plan
 from typing import List
 from agents.search_agent import search
+from services.chunking_service import generate_chunks
+from services.vector_store import store_embeddings
+from agents.answer_agent import generate_answer
 
 router = APIRouter()
 
@@ -20,53 +20,44 @@ def test_route():
 
 
 class QueryRequest(BaseModel):
-    userId: str
+    user_id: str
     query: str
 
-@router.post("/user-query")
-def post_query(req: QueryRequest):
+@router.post("/ask")
+def ask_question(req: QueryRequest):
     try:
-        user = queries_collection.find_one({"userId": req.userId})
-        ai_reply = llm_service.ai_response(req.query)
-        generate_plan(query=req.query, user_id=req.userId)
+        plan = generate_plan(query=req.query, user_id=req.user_id)
+        if not plan:
+            raise ValueError("Error occured while generating plan")
         
-        if user:
-            queries_collection.update_one(
-                {"userId": req.userId},
-                {
-                    "$push": {
-                        "history": {
-                            "$each": [
-                                Query(content=req.query).model_dump(),
-                                Query(content=ai_reply).model_dump()
-                            ]
-                        }
-                    }
-                }
-            )
-
-        else:
-            new_user = Queries(
-                userId=req.userId,
-                history=[
-                    Query(content=req.query),
-                    Query(content=ai_reply)
-                ]
-            )
-
-            queries_collection.insert_one(new_user.model_dump())
-
+        search_agent_content = search(plan)
+        if not search_agent_content:
+            raise ValueError("Error occured during web search")
+        
+        chunks = generate_chunks(search_agent_content)
+        if not chunks:
+            raise ValueError("Something went wrong while generating the chunks")
+        
+        info = store_embeddings(chunks)
+        if not info == "completed":
+            raise ValueError("Something went wrong while storing embeddings")
+        
+        result = generate_answer(req.query)
+        if not result:
+            raise ValueError("Something went wrong while answer llm call")
+        
         return {
             "success": True,
-            "message": "User query saved",
-            "reply": ai_reply
+            "data": result
         }
+    
     except Exception as e:
+        print("Something went wrong: ", str(e))
         return {
             "success": False,
-            "detail": f"Internal server error: {str(e)}"
+            "message": f"Internal server error: {str(e)}"
         }
-
+    
 
 @router.get("/get-history/{userId}")
 def get_chat_history(userId: str):
@@ -84,26 +75,6 @@ def get_chat_history(userId: str):
             }
 
     except Exception as e:
-        return {
-            "success": False,
-            "message": f"Internal server error: {str(e)}"
-        }
-
-
-# Test Route
-class SearchRequest(BaseModel):
-    question: List[str]
-
-@router.post("/search-query")
-def search_query(req: SearchRequest):
-    try:
-        res = search(req.question)
-        return {
-            "success": True,
-            "data": res
-        }
-    except Exception as e:
-        print(f"Something went wrong while searching")
         return {
             "success": False,
             "message": f"Internal server error: {str(e)}"
