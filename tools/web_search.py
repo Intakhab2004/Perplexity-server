@@ -9,7 +9,7 @@ def search_query(sub_query: str):
         response = tavily_client.search(
             query=sub_query,
             max_results=5,
-            search_depth='advanced',
+            search_depth='ultra-fast',
             exclude_domains=["facebook.com", "instagram.com", "twitter.com", "tiktok.com", "pinterest.com", "flipboard.com"]
         )
     except Exception as e:
