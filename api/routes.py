@@ -25,7 +25,7 @@ class QueryRequest(BaseModel):
     query: str
 
 @router.post("/ask")
-def ask_question(req: QueryRequest):
+async def ask_question(req: QueryRequest):
     try:
         t1 = time.time()
 
@@ -36,7 +36,7 @@ def ask_question(req: QueryRequest):
         print("Subqueries:", time.time()-t1)
         t2 = time.time()
         
-        search_agent_content = search(plan)
+        search_agent_content = await search(plan)
         if not search_agent_content:
             raise ValueError("Error occured during web search")
         
