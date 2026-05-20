@@ -6,7 +6,7 @@ import re
 PLANNER_PROMPT = """
     You are a research planning assistant.
 
-    Given a user query, break it into 4-6 clear, specific sub-questions 
+    Given a user query, break it into 3-4 clear, specific sub-questions 
     that can be used to perform deep research.
 
     Rules:

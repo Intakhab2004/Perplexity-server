@@ -11,8 +11,16 @@ client = QdrantClient(url=settings.QDRANT_URL)
 
 def store_embeddings(chunks: List[Dict]):
     # Generating embeddings
-    texts = [chunk.get("text", "") for chunk in chunks if chunk.get("text")]
-    texts = list(set(texts))
+    unique_chunks = {}
+    for chunk in chunks:
+        text = chunk.get("text", "").strip()
+
+        if text and text not in unique_chunks:
+            unique_chunks[text] = chunk
+    
+    unique_chunks = list(unique_chunks.values())
+
+    texts = [c["text"] for c in unique_chunks]
     embeddings = generate_embedding(texts)
 
     # Creating collection for vector_db if not exists
@@ -28,10 +36,10 @@ def store_embeddings(chunks: List[Dict]):
 
 
     points = []
-    for i, chunk in enumerate(chunks):
+    for chunk, embedding in zip(unique_chunks, embeddings):
         points.append({
             "id": str(uuid.uuid4()),
-            "vector": embeddings[i],
+            "vector": embedding,
             "payload": {
                 "text": chunk["text"],
                 "source": chunk["source"],
