@@ -52,7 +52,7 @@ def generate_answer(query: str):
     ]
 
     structured_answer = {
-        "answer": answer,
+        "content": answer,
         "sources": sources
     }
 
